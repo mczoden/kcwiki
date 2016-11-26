@@ -188,6 +188,9 @@ function main()
         lv99ShiplistString = lv99ShiplistString .. dataToList(wikiId, LV99)
     end
 
+    print('<!-- 如果您熟悉lua，可参考该lua脚本生成')
+    print('https://github.com/mczoden/kcwiki/edit/master/kcwiki_data_to_list.lua')
+    print('同时也欢迎您对脚本提出意见和建议，谢谢使用-->')
     print('<tabber>初始数据={{舰娘列表/页首}}')
     print(initShiplistString)
     print('{{页尾|html}}')
