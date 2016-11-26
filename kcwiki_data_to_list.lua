@@ -26,8 +26,10 @@ local INIT = 1
 local LV99 = 2
 
 
-function isnumber(str)
-    return string.match(str, '^%d+$')
+function isNormalWikiId(str)
+    -- Normal wiki ID: 001, 002, ..., Mist01, Mist02...
+    -- Else: 001a, 002a...
+    return (string.match(str, '^%d+$') or string.match(str, 'Mist%d+$'))
 end
 
 
@@ -88,15 +90,15 @@ end
 function dataToList(wikiId, initOrLv99)
     local shipData = wikiOrigShipdata.shipDataTb[wikiId]
     local result = ''
-    local itemPrefix = isnumber(wikiId) and '' or '2'
+    local itemSuffix = isNormalWikiId(wikiId) and '' or '2'
 
-    if isnumber(wikiId) then
+    if isNormalWikiId(wikiId) then
         result = result .. '{{舰娘列表\n'
-        result = result .. string.format('\t|编号 = %d\n', wikiId)
+        result = result .. string.format('\t|编号 = %s\n', wikiId)
     end
     result = result .. string.format('\t|名字%s = %s\n',
-                                     itemPrefix, shipData['中文名'])
-    if isnumber(wikiId) then
+                                     itemSuffix, shipData['中文名'])
+    if isNormalWikiId(wikiId) then
         result = result .. string.format('\t|级别 = %s%d号\n',
                                          shipData['级别'][1],
                                          shipData['级别'][2])
@@ -105,31 +107,31 @@ function dataToList(wikiId, initOrLv99)
     end
 
     result = result .. string.format('\t|火力%s = %d\n',
-                                     itemPrefix,
+                                     itemSuffix,
                                      shipData['数据']['火力'][initOrLv99])
     result = result .. string.format('\t|雷装%s = %d\n',
-                                     itemPrefix,
+                                     itemSuffix,
                                      shipData['数据']['雷装'][initOrLv99])
     result = result .. string.format('\t|对空%s = %d\n',
-                                     itemPrefix,
+                                     itemSuffix,
                                      shipData['数据']['对空'][initOrLv99])
     result = result .. string.format('\t|对潜%s = %d\n',
-                                     itemPrefix,
+                                     itemSuffix,
                                      shipData['数据']['对潜'][initOrLv99])
     result = result .. string.format('\t|索敌%s = %d\n',
-                                     itemPrefix,
+                                     itemSuffix,
                                      shipData['数据']['索敌'][initOrLv99])
     result = result .. string.format('\t|运%s = %d\n',
-                                     itemPrefix,
+                                     itemSuffix,
                                      shipData['数据']['运'][initOrLv99])
     result = result .. string.format('\t|耐久%s = %d\n',
-                                     itemPrefix,
+                                     itemSuffix,
                                      shipData['数据']['耐久'][initOrLv99])
     result = result .. string.format('\t|装甲%s = %d\n',
-                                     itemPrefix,
+                                     itemSuffix,
                                      shipData['数据']['装甲'][initOrLv99])
     result = result .. string.format('\t|回避%s = %d\n',
-                                     itemPrefix,
+                                     itemSuffix,
                                      shipData['数据']['回避'][initOrLv99])
 
     local shipCarrying = 0
@@ -141,23 +143,23 @@ function dataToList(wikiId, initOrLv99)
     end
 
     result = result .. string.format('\t|搭载%s = %d\n',
-                                     itemPrefix,
+                                     itemSuffix,
                                      shipCarrying)
     result = result .. string.format('\t|速力%s = %s\n',
-                                     itemPrefix,
+                                     itemSuffix,
                                      shipSpeedIdToString(shipData['数据']['速力']))
     result = result .. string.format('\t|射程%s = %s\n',
-                                     itemPrefix,
+                                     itemSuffix,
                                      shipRangeIdToString(shipData['数据']['射程']))
     result = result .. string.format('\t|燃料%s = %d\n',
-                                     itemPrefix,
+                                     itemSuffix,
                                      shipData['消耗']['燃料'])
     result = result .. string.format('\t|弹药%s = %d\n',
-                                     itemPrefix,
+                                     itemSuffix,
                                      shipData['消耗']['弹药'])
     local remark = initOrLv99 == LV99 and 'Lv99' or ''
     result = result .. string.format('\t|备注%s = %s\n',
-                                     itemPrefix, remark)
+                                     itemSuffix, remark)
 
     result = result .. '}}\n'
     return result
@@ -177,7 +179,7 @@ function main()
     table.sort(wikiIdList)
     for _, wikiId in ipairs(wikiIdList) do
 
-        if not isnumber(wikiId) then
+        if not isNormalWikiId(wikiId) then
             --
             -- Kcwiki ID such as 001a.
             -- As the last ID is 001, need to delete '}}\n' in the end.
@@ -188,9 +190,9 @@ function main()
         lv99ShiplistString = lv99ShiplistString .. dataToList(wikiId, LV99)
     end
 
-    print('<!-- 如果您熟悉lua，可参考该lua脚本生成')
+    print('<!-- 如果您熟悉lua，可参考该lua脚本生成该页面代码')
     print('https://github.com/mczoden/kcwiki/edit/master/kcwiki_data_to_list.lua')
-    print('同时也欢迎您对脚本提出意见和建议，谢谢使用-->')
+    print('同时也欢迎您对脚本提出意见和建议，谢谢-->\n')
     print('<tabber>初始数据={{舰娘列表/页首}}')
     print(initShiplistString)
     print('{{页尾|html}}')
