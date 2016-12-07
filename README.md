@@ -12,7 +12,8 @@ Generate [舰娘列表] (https://zh.kcwiki.moe/wiki/%E8%88%B0%E5%A8%98%E5%88%97%
 
 如果只有lua，没有python环境，需要做如下步骤：
 1. 直接用浏览器访问kcwiki的 模块:舰娘数据
-2. 打开编辑模式，复制lua代码到本地文件，并重命名为wiki_orig_shipdata
+2. 打开编辑模式，复制lua代码到本地文件，并重命名为
+    wiki_orig_shipdata
 3. 在终端运行
     lua kcwiki_data_to_list.lua > output.txt
 4. 直接将output.txt中的内容，复制到舰娘列表的编辑区。 

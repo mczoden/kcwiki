@@ -172,8 +172,8 @@ function main ()
     lv99_ship_list_string = lv99_ship_list_string .. data_to_list(wiki_id, LV99)
   end
 
-  print('<!-- 如果您熟悉lua，可参考该lua脚本生成该页面代码')
-  print('https://github.com/mczoden/kcwiki/edit/master/kcwiki_data_to_list.lua')
+  print('<!-- 如果您熟悉lua，可参考该脚本生成页面代码')
+  print('https://github.com/mczoden/kcwiki')
   print('同时也欢迎您对脚本提出意见和建议，谢谢 -->\n')
   print('<tabber>初始数据={{舰娘列表/页首}}')
   print(init_ship_list_string)
