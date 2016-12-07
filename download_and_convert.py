@@ -71,7 +71,7 @@ def do_convert():
         raise KcError('Extract Lua code from HTML failed')
 
     with open('wiki_orig_shipdata.lua', 'w') as f:
-        print('Write Lua code to wiki_orig_shipdata ...')
+        print('Write Lua code to wiki_orig_shipdata.lua ...')
         f.write(match.group() + '\n')
 
     print('Call kcwiki_data_to_list.lua to convert ... ')
