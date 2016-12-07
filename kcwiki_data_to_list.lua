@@ -1,25 +1,9 @@
---
--- kcwiki_data_to_list.lua
---
--- zh.kcwiki.moe
--- Generate "舰娘列表" (https://zh.kcwiki.moe/wiki/%E8%88%B0%E5%A8%98%E5%88%97%E8%A1%A8)
--- by
--- [[模块:舰娘数据]] (https://zh.kcwiki.moe/wiki/%E6%A8%A1%E5%9D%97:%E8%88%B0%E5%A8%98%E6%95%B0%E6%8D%AE)
---
---
--- How to use:
---
--- 1. Install Lua, version 5.1 or newer.
--- 2. Visit https://zh.kcwiki.moe/wiki/%E6%A8%A1%E5%9D%97:%E8%88%B0%E5%A8%98%E6%95%B0%E6%8D%AE,
---    click "编辑", then copy the lua code and save as file "wiki_orig_shipdata.lua".
--- 3. Put kcwiki_data_to_list.lua wiki_orig_shipdata.lua under same path.
--- 4. Run command below in console/cmd/terminal:
---    lua kcwiki_data_to_list.lua > output.txt
--- 5. Copy the code in output.txt to "镇守府沙滩（沙盒）" to ensure
---    there's no syntax error.
--- 6. Finally, edit 舰娘列表.
-
-orig_data = require('wiki_orig_shipdata')
+local orig_data = require('wiki_orig_shipdata')
+local string = {
+  match = string.match,
+  format = string.format,
+  sub = string.sub
+}
 
 
 local INIT = 1
