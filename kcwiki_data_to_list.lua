@@ -2,12 +2,21 @@ local orig_data = require('wiki_orig_shipdata')
 local string = {
   match = string.match,
   format = string.format,
-  sub = string.sub
+  sub = string.sub,
+  len = string.len
+}
+local math = {
+  floor = math.floor,
 }
 
 
 local INIT = 1
 local LV99 = 2
+
+
+function is_interger_number (n)
+  return type(n) == 'number' and n == math.floor(n)
+end
 
 
 function is_normal_wiki_id (wiki_id)
@@ -43,7 +52,11 @@ function ship_type_id_to_string (ship_type_id)
     '补给舰'
   }
 
-  return tbl[ship_type_id]
+  if tbl[ship_type_id] == nil then
+    error('')
+  else
+    return tbl[ship_type_id]
+  end
 end
 
 
@@ -54,7 +67,11 @@ function ship_speed_id_to_string (ship_speed_id)
   tbl[5] = '低速'
   tbl[10] = '高速'
 
-  return tbl[ship_speed_id]
+  if tbl[ship_speed_id] == nil then
+    error('')
+  else
+    return tbl[ship_speed_id]
+  end
 end
 
 
@@ -67,9 +84,100 @@ function ship_range_id_to_string (ship_range_id)
   }
   tbl[0] = '无'
 
-  return tbl[ship_range_id]
+  if tbl[ship_range_id] == nil then
+    error('')
+  else
+    return tbl[ship_range_id]
+  end
 end
 
+
+function check_data_validity (wiki_id, init_or_lv99)
+  local ship_data = orig_data.shipDataTb[wiki_id]
+  io.stderr:write(string.format("%s %s\n", wiki_id, ship_data['中文名']))
+  
+  local string_data = {
+    ['中文名'] = ship_data['中文名'],
+    ['舰型'] = ship_data['级别'][1]
+  }
+  for key in pairs(string_data) do
+    local value = string_data[key]
+    if type(value) ~= 'string' or
+        string.len(value) == 0 then
+        io.stderr:write(string.format('非法的%s：%s\n', key, tostring(value)))
+        io.stderr:write('必须是字符串\n')
+      return
+    end
+  end
+
+  local positive_interger_data = {
+    ['舰番号'] = ship_data['级别'][2],
+    ['耐久'] = ship_data['数据']['耐久'][init_or_lv99],
+    ['燃料'] = ship_data['消耗']['燃料'],
+    ['弹药'] = ship_data['消耗']['弹药'],
+    ['舰种'] = ship_data['舰种']
+  }
+  for key in pairs(positive_interger_data) do
+    local value = positive_interger_data[key]
+      if not is_interger_number(value) or value <= 0 then 
+      io.stderr:write(string.format('非法的%s：%s\n', key, tostring(value)))
+      io.stderr:write('必须是正整数\n')
+      return
+    end
+  end
+
+  local natural_data = {
+    ['火力'] = ship_data['数据']['火力'][init_or_lv99],
+    ['雷装'] = ship_data['数据']['雷装'][init_or_lv99],
+    ['对空'] = ship_data['数据']['对空'][init_or_lv99],
+    ['对潜'] = ship_data['数据']['对潜'][init_or_lv99],
+    ['索敌'] = ship_data['数据']['索敌'][init_or_lv99],
+    ['运'] = ship_data['数据']['运'][init_or_lv99],
+    ['装甲'] = ship_data['数据']['装甲'][init_or_lv99],
+    ['回避'] = ship_data['数据']['回避'][init_or_lv99],
+    ['速力'] = ship_data['数据']['速力'],
+    ['射程'] = ship_data['数据']['射程']
+  }
+  for key in pairs(natural_data) do
+    local value = natural_data[key]
+    if not is_interger_number(value) or value < 0 then
+      io.stderr:write(string.format('非法的%s：%s\n', key, tostring(value)))
+      io.stderr:write('必须是自然数\n')
+      return
+    end
+  end
+
+  local enumeration_data = {
+    ['舰种'] = {
+      value = ship_data['舰种'],
+      convert_handler = ship_type_id_to_string
+    },
+    ['速力'] = {
+      value = ship_data['数据']['速力'],
+      convert_handler = ship_speed_id_to_string
+    },
+    ['射程'] = {
+      value = ship_data['数据']['射程'],
+      convert_handler = ship_range_id_to_string
+    }
+  }
+  for key in pairs(enumeration_data) do
+    local item = enumeration_data[key]
+    if not pcall(item.convert_handler, item.value) then
+      io.stderr:write(string.format('%s使用了非法的枚举值：%d\n',
+                                    key, item.value))
+      return
+    end
+  end
+
+  for _, v in ipairs(ship_data['装备']['搭载']) do
+    if not is_interger_number(v) then
+      io.stderr:write(string.format('使用了非法的搭载值：%s\n',
+                                    tostring(value)))
+      return
+    end
+  end
+end
 
 function data_to_list (wiki_id, init_or_lv99)
   local ship_data = orig_data.shipDataTb[wiki_id]
@@ -85,7 +193,7 @@ function data_to_list (wiki_id, init_or_lv99)
   if is_normal_wiki_id(wiki_id) then
     result = result .. string.format('\t|级别 = %s%d号\n',
                                      ship_data['级别'][1],
-                                     ship_data['级别'][2])
+                                     tonumber(ship_data['级别'][2]))
     result = result .. string.format('\t|类型 = %s\n',
                                      ship_type_id_to_string(ship_data['舰种']))
   end
@@ -168,8 +276,20 @@ function main ()
       init_ship_list_string = string.sub(init_ship_list_string, 1, -4) .. '\n'
       lv99_ship_list_string = string.sub(lv99_ship_list_string, 1, -4) .. '\n'
     end
-    init_ship_list_string = init_ship_list_string .. data_to_list(wiki_id, INIT)
-    lv99_ship_list_string = lv99_ship_list_string .. data_to_list(wiki_id, LV99)
+    if not pcall(function ()
+        init_ship_list_string = init_ship_list_string ..
+                                data_to_list(wiki_id, INIT)
+        end) then
+      check_data_validity(wiki_id, INIT)
+      os.exit(-1)
+    end
+    if not pcall(function ()
+        lv99_ship_list_string = lv99_ship_list_string ..
+                                data_to_list(wiki_id, LV99)
+         end) then
+      check_data_validity(wiki_id, LV99)
+      os.exit(-1)
+    end
   end
 
   print('<!-- 如果您熟悉lua和python，可参考该脚本生成页面代码')
