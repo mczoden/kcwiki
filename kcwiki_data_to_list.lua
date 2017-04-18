@@ -13,25 +13,42 @@ local math = {
 local INIT = 1
 local LV99 = 2
 
+-- Macro for restrict of function get_single_number_data
+-- all number
+local NUM_ALL = {
+  positive = true,
+  zero = true,
+  negative = true
+}
+-- positive only
+local NUM_POS = {
+  positive = true
+}
+-- not negative
+local NUM_NONEG= {
+  positive = true,
+  zero = true
+}
 
-function error_msg (...)
+
+local function error_msg (...)
   io.stderr:write(string.format(...))
 end
 
 
-function is_interger_number (n)
+local function is_interger_number (n)
   return type(n) == 'number' and n == math.floor(n)
 end
 
 
-function is_normal_wiki_id (wiki_id)
+local function is_normal_wiki_id (wiki_id)
   -- Normal wiki ID: 001, 002, ..., Mist01, Mist02...
   -- Else: 001a, 002a...
   return string.match(wiki_id, '^%d+$') or string.match(wiki_id, 'Mist%d+$')
 end
 
 
-function ship_type_id_to_string (index)
+local function ship_type_id_to_string (index)
   local t = {
     '海防舰',
     '驱逐舰',
@@ -61,13 +78,13 @@ function ship_type_id_to_string (index)
   if value then
     return true, value, ''
   else
-    return false, '', string.format('使用了非法的枚举值：%s\n', 
+    return false, '', string.format('使用了非法的枚举值：%s\n',
                                     tostring(index))
   end
 end
 
 
-function ship_speed_id_to_string (index)
+local function ship_speed_id_to_string (index)
   local t = {}
 
   t[0] = '陆上基地'
@@ -78,13 +95,13 @@ function ship_speed_id_to_string (index)
   if value then
     return true, value, ''
   else
-    return false, '', string.format('使用了非法的枚举值：%s\n', 
+    return false, '', string.format('使用了非法的枚举值：%s\n',
                                     tostring(index))
   end
 end
 
 
-function ship_range_id_to_string (index)
+local function ship_range_id_to_string (index)
   local t = {
     '短',
     '中',
@@ -97,13 +114,13 @@ function ship_range_id_to_string (index)
   if value then
     return true, value, ''
   else
-    return false, '', string.format('使用了非法的枚举值：%s\n', 
+    return false, '', string.format('使用了非法的枚举值：%s\n',
                                     tostring(index))
   end
 end
 
 
-function get_single_string_data (data)
+local function get_single_string_data (data)
   local msg = ''
 
   if type(data) ~= 'string' then
@@ -115,228 +132,211 @@ function get_single_string_data (data)
 end
 
 
-function get_single_number_data (data, restrict)
+local function get_single_number_data (data, restrict)
   local msg = ''
   local v = nil
   local is_number = true
   local ret = ''
 
   if type(restrict) ~= 'table' then
-    restrict = {}
+    restrict = NUM_ALL
   end
 
-  if type(data) == 'string' then
-    v = tonumber(data)
-    if v == nil then
-      is_number = false
-      msg = msg .. string.format('出现字符串：%s\n', data)
-    else
-      is_number = true
-    end
-  elseif type(data) == 'number' then
-    is_number = true
-  else -- data is not number or interger
-    is_number = false
-    msg = msg .. string.format('可能是一个非法类型：%s', type(data))
+  local n = tonumber(data)
+  if not n then
+    return false, tostring(n), string.format('出现非数字：%s\n',
+                                                 tostring(n))
   end
 
-  if is_number then
-    v = tonumber(data)
-
-    if not is_interger_number(v) and not result.allow_decimal then
-      msg = msg .. string.format('出现小数：%s\n', tostring(v))
-    end
-
-    if v < 0 then
-      msg = msg .. string.format('出现负数：%s\n', tostring(v))
-    end
+  if not is_interger_number(n) then
+    return false, n, string.format('出现小数：%f\n', n)
   end
 
-  return msg == '', tostring(data), msg
+  if n < 0 and not restrict.negative then
+    return false, n, string.format('出现负数：%d\n', n)
+  end
+
+  if n == 0 and not restrict.zero then
+    return false, n, string.format('出现0\n')
+  end
+
+  if n > 0 and not restrict.positive then
+    return false, n, string.format('出现正数：%d\n', n)
+  end
+
+  return true, n, ''
 end
 
 
-function fillin_init_lv99_data (data)
-  local status1, ret1, msg1 = get_single_number_data(data[INIT])
-  local status99, ret99, msg99 = get_single_number_data(data[LV99])
+local function fillin_init_lv99_data (data, restrict)
+  local status1, ret1, msg1 = get_single_number_data(data[INIT], restrict)
+  local status99, ret99, msg99 = get_single_number_data(data[LV99], restrict)
 
   return status1 and status99, {ret1, ret99}, msg1 .. msg99
 end
 
 
-function ship_data_parser (wiki_id, ship_data)
+local function ship_data_parser (wiki_id, ship_data)
   local ship = {
     wiki_id = wiki_id
   }
+  local st, ret, msg
+  local prompt = string.format('[%s]\n', wiki_id)
 
-  local t = {
-    {
-      key = 'zh_name',
-      zh_key = '中文名',
-      data = ship_data['中文名'],
-      handler = function (data)
-        local status, ret, msg = get_single_string_data(data)
-
-        if status == false or ret == '' or ret == 'nil' then
-          error_msg('[%s]\n', wiki_id)
-          error_msg('非法中文名，程序退出\n')
-          os.exit(-1)
-        end
-
-        return true, ret, ''
-      end
-    },
-    {
-      key = 'class',
-      zh_key = '级别',
-      data = ship_data['级别'],
-      handler = function (data)
-        local class = ''
-        local status, ret, msg = get_single_string_data(data[1])
-
-        if status == false or ret == '' or ret == 'nil' then
-          error_msg('[%s %s]\n', wiki_id, ship.zh_name)
-          error_msg('非法的级别名，程序退出\n')
-          os.exit(-1)
-        end
-        class = ret
-
-        status, ret, msg = get_single_number_data(data[2])
-        if not is_interger_number(tonumber(ret)) or tonumber(ret) < 0 then
-          error_msg('[%s %s]\n', wiki_id, ship.zh_name)
-          error_msg('非法的舰番号：%s\n', tostring(ret))
-          error_msg('程序退出\n')
-          os.exit(-1)
-        end
-        if tonumber(ret) > 0 then
-          class = class .. ret .. '号'
-        end
-
-        return true, class, ''
-      end
-    },
-    {
-      key = 'hp',
-      zh_key = '耐久',
-      data = ship_data['数据']['耐久'],
-      handler = fillin_init_lv99_data
-    },
-    {
-      key = 'firepower',
-      zh_key = '火力',
-      data = ship_data['数据']['火力'],
-      handler = fillin_init_lv99_data
-    },
-    {
-      key = 'armor',
-      zh_key = '装甲',
-      data = ship_data['数据']['装甲'],
-      handler = fillin_init_lv99_data
-    },
-    {
-      key = 'torpedo',
-      zh_key = '雷装',
-      data = ship_data['数据']['雷装'],
-      handler = fillin_init_lv99_data
-    },
-    {
-      key = 'evasion',
-      zh_key = '回避',
-      data = ship_data['数据']['回避'],
-      handler = fillin_init_lv99_data
-    },
-    {
-      key = 'aa',
-      zh_key = '对空',
-      data = ship_data['数据']['对空'],
-      handler = fillin_init_lv99_data
-    },
-    {
-      key = 'asw',
-      zh_key = '对潜',
-      data = ship_data['数据']['对潜'],
-      handler = fillin_init_lv99_data
-    },
-    {
-      key = 'los',
-      zh_key = '索敌',
-      data = ship_data['数据']['索敌'],
-      handler = fillin_init_lv99_data
-    },
-    {
-      key = 'luck',
-      zh_key = '运',
-      data = ship_data['数据']['运'],
-      handler = fillin_init_lv99_data
-    },
-    {
-      key = 'fuel',
-      zh_key = '燃料',
-      data = ship_data['消耗']['燃料'],
-      handler = get_single_number_data
-    },
-    {
-      key = 'ammo',
-      zh_key = '燃料',
-      data = ship_data['消耗']['弹药'],
-      handler = get_single_number_data
-    },
-    {
-      key = 'type',
-      zh_key = '舰种',
-      data = ship_data['舰种'],
-      handler = ship_type_id_to_string
-    },
-    {
-      key = 'speed',
-      zh_key = '速力',
-      data = ship_data['数据']['速力'],
-      handler = ship_speed_id_to_string
-    },
-    {
-      key = 'range',
-      zh_key = '射程',
-      data = ship_data['数据']['射程'],
-      handler = ship_range_id_to_string
-    },
-    {
-      key = 'aircraft',
-      zh_key = '搭载',
-      data = ship_data['装备']['搭载'],
-      handler = function (data)
-        local no_error = true 
-        local total_msg = ''
-        local aircraft = 0
-
-        for _, v in ipairs(data) do
-          local status, ret, msg = get_single_number_data(v)
-          if status == false then
-            if ret ~= '-1' then
-              no_error = false
-              total_msg = total_msg .. msg
-            end
-            ret = '0'
-          end
-          aircraft = aircraft + tonumber(ret)
-        end
-
-        return no_error, tostring(aircraft), total_msg
-      end
-    }
-  }
-  for i in ipairs(t) do
-    local status, ret, msg = t[i].handler(t[i].data)
-    if status == false then
-      error_msg('[%s %s]\n%s\n%s', wiki_id, ship.zh_name, t[i].zh_key, msg)
+  repeat
+    st, ret, msg = get_single_string_data(ship_data['中文名'])
+    if not st or ret == '' then
+      prompt = prompt .. '非法中文名\n' .. msg
+      break
     end
-    ship[t[i].key] = ret
-  end
+    ship.zh_name = ret
 
-  return ship
+    prompt = string.format('[%s %s]\n', wiki_id, ret)
+
+    local class = ''
+    st, ret, msg = get_single_string_data(ship_data['级别'][1])
+    if not st or ret == '' then
+      prompt = prompt .. '非法的级别名\n' .. msg
+      break
+    end
+    class = ret
+    st, ret, msg = get_single_number_data(ship_data['级别'][2], NUM_NONEG)
+    if not st then
+      prompt = prompt .. '非法的舰番号\n' .. msg
+      break
+    end
+    if ret > 0 then
+      class = class .. tostring(ret) .. '号'
+    end
+    ship.class = class
+
+    st, ret, msg = fillin_init_lv99_data(ship_data['数据']['耐久'], NUM_POS)
+    if not st then
+      prompt = prompt .. '耐久\n' .. msg
+      break
+    end
+    ship.hp = ret
+
+    st, ret, msg = fillin_init_lv99_data(ship_data['数据']['火力'], NUM_NONEG)
+    if not st then
+      prompt = prompt .. '火力\n' .. msg
+      break
+    end
+    ship.firepower = ret
+
+    st, ret, msg = fillin_init_lv99_data(ship_data['数据']['装甲'], NUM_NONEG)
+    if not st then
+      prompt = prompt .. '装甲\n' .. msg
+      break
+    end
+    ship.armor = ret
+
+    st, ret, msg = fillin_init_lv99_data(ship_data['数据']['雷装'], NUM_NONEG)
+    if not st then
+      prompt = prompt .. '雷装\n' .. msg
+      break
+    end
+    ship.torpedo = ret
+
+    st, ret, msg = fillin_init_lv99_data(ship_data['数据']['回避'], NUM_NONEG)
+    if not st then
+      prompt = prompt .. '回避\n' .. msg
+      break
+    end
+    ship.evasion = ret
+
+    st, ret, msg = fillin_init_lv99_data(ship_data['数据']['对空'], NUM_NONEG)
+    if not st then
+      prompt = prompt .. '对空\n' .. msg
+      break
+    end
+    ship.aa = ret
+
+    st, ret, msg = fillin_init_lv99_data(ship_data['数据']['对潜'], NUM_NONEG)
+    if not st then
+      prompt = prompt .. '对潜\n' .. msg
+      break
+    end
+    ship.asw = ret
+
+    st, ret, msg = fillin_init_lv99_data(ship_data['数据']['索敌'], NUM_NONEG)
+    if not st then
+      prompt = prompt .. '索敌\n' .. msg
+      break
+    end
+    ship.los = ret
+
+    st, ret, msg = fillin_init_lv99_data(ship_data['数据']['运'], NUM_NONEG)
+    if not st then
+      prompt = prompt .. '运\n' .. msg
+      break
+    end
+    ship.luck = ret
+
+    st, ret, msg = get_single_number_data(ship_data['消耗']['燃料'], NUM_POS)
+    if not st then
+      prompt = prompt .. '燃料\n' .. msg
+      break
+    end
+    ship.fuel = ret
+
+    st, ret, msg = get_single_number_data(ship_data['消耗']['弹药'], NUM_POS)
+    if not st then
+      prompt = prompt .. '弹药\n' .. msg
+      break
+    end
+    ship.ammo = ret
+
+    st, ret, msg = ship_type_id_to_string(ship_data['舰种'])
+    if not st then
+      prompt = prompt .. '舰种\n' .. msg
+      break
+    end
+    ship.type = ret
+
+    st, ret, msg = ship_speed_id_to_string(ship_data['数据']['速力'])
+    if not st then
+      prompt = prompt .. '速力\n' .. msg
+      break
+    end
+    ship.speed = ret
+
+    st, ret, msg = ship_range_id_to_string(ship_data['数据']['射程'])
+    if not st then
+      prompt = prompt .. '射程\n' .. msg
+      break
+    end
+    ship.range = ret
+
+    local has_error = false
+    local aircraft = 0
+    for _, v in ipairs(ship_data["装备"]["搭载"]) do
+      st, ret, msg = get_single_number_data(v, NUM_NONEG)
+      if not st and ret ~= -1 then
+        prompt = prompt .. '搭载\n' .. msg
+        has_error = true
+        break
+      end
+      if ret == -1 then
+        ret = 0
+      end
+      aircraft = aircraft + ret
+    end
+    if has_error then
+      break
+    end
+    ship.aircraft = aircraft
+
+    return ship
+  until false -- repeat statement, to implement goto flow
+
+  -- get here means has error
+  error_msg(prompt)
+  os.exit(-1)
 end
 
 
-function data_to_list (ship, init_or_lv99)
+local function data_to_list (ship, init_or_lv99)
   local result = ''
   local item_suffix = is_normal_wiki_id(ship.wiki_id) and '' or '2'
 
@@ -351,34 +351,34 @@ function data_to_list (ship, init_or_lv99)
     result = result .. string.format('\t|类型 = %s\n', ship.type)
   end
 
-  result = result .. string.format('\t|火力%s = %s\n',
+  result = result .. string.format('\t|火力%s = %d\n',
                                    item_suffix, ship.firepower[init_or_lv99])
-  result = result .. string.format('\t|雷装%s = %s\n',
+  result = result .. string.format('\t|雷装%s = %d\n',
                                    item_suffix, ship.torpedo[init_or_lv99])
-  result = result .. string.format('\t|对空%s = %s\n',
+  result = result .. string.format('\t|对空%s = %d\n',
                                    item_suffix, ship.aa[init_or_lv99])
-  result = result .. string.format('\t|对潜%s = %s\n',
+  result = result .. string.format('\t|对潜%s = %d\n',
                                    item_suffix, ship.asw[init_or_lv99])
-  result = result .. string.format('\t|索敌%s = %s\n',
+  result = result .. string.format('\t|索敌%s = %d\n',
                                    item_suffix, ship.los[init_or_lv99])
-  result = result .. string.format('\t|运%s = %s\n',
+  result = result .. string.format('\t|运%s = %d\n',
                                    item_suffix, ship.luck[init_or_lv99])
-  result = result .. string.format('\t|耐久%s = %s\n',
+  result = result .. string.format('\t|耐久%s = %d\n',
                                    item_suffix, ship.hp[init_or_lv99])
-  result = result .. string.format('\t|装甲%s = %s\n',
+  result = result .. string.format('\t|装甲%s = %d\n',
                                    item_suffix, ship.armor[init_or_lv99])
-  result = result .. string.format('\t|回避%s = %s\n',
+  result = result .. string.format('\t|回避%s = %d\n',
                                    item_suffix, ship.evasion[init_or_lv99])
 
-  result = result .. string.format('\t|搭载%s = %s\n',
+  result = result .. string.format('\t|搭载%s = %d\n',
                                    item_suffix, ship.aircraft)
   result = result .. string.format('\t|速力%s = %s\n',
                                    item_suffix, ship.speed)
   result = result .. string.format('\t|射程%s = %s\n',
                                    item_suffix, ship.range)
-  result = result .. string.format('\t|燃料%s = %s\n',
+  result = result .. string.format('\t|燃料%s = %d\n',
                                    item_suffix, ship.fuel)
-  result = result .. string.format('\t|弹药%s = %s\n',
+  result = result .. string.format('\t|弹药%s = %d\n',
                                    item_suffix, ship.ammo)
   local remark = init_or_lv99 == LV99 and 'Lv99' or ''
   result = result .. string.format('\t|备注%s = %s\n',
@@ -388,7 +388,7 @@ function data_to_list (ship, init_or_lv99)
 end
 
 
-function main ()
+local function main ()
   local wiki_id_list = {}
   local init_ship_list_string = ''
   local lv99_ship_list_string = ''

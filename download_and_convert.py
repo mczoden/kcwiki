@@ -58,7 +58,7 @@ def get_last_upate_time_from_wiki(url):
 
 
 def is_need_update():
-    print('Compare whether need to update ...')
+    print('Check whether need to update ...')
     return (get_last_upate_time_from_wiki(SHIP_DATA_HISTORY_URL) >
             get_last_upate_time_from_wiki(SHIP_LIST_HISTORY_URL))
 
