@@ -147,7 +147,7 @@ function get_single_number_data (data, restrict)
       msg = msg .. string.format('出现小数：%s\n', tostring(v))
     end
 
-    if v < 0 and then
+    if v < 0 then
       msg = msg .. string.format('出现负数：%s\n', tostring(v))
     end
   end
