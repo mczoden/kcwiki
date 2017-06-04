@@ -145,7 +145,7 @@ local function get_single_number_data (data, restrict)
   local n = tonumber(data)
   if not n then
     return false, tostring(n), string.format('出现非数字：%s\n',
-                                                 tostring(n))
+                                              tostring(data))
   end
 
   if not is_interger_number(n) then
