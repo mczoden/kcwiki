@@ -41,10 +41,15 @@ local function is_interger_number (n)
 end
 
 
-local function is_normal_wiki_id (wiki_id)
+local function is_no_remodel_wiki_id (wiki_id)
   -- Normal wiki ID: 001, 002, ..., Mist01, Mist02...
   -- Else: 001a, 002a...
-  return string.match(wiki_id, '^%d+$') or string.match(wiki_id, 'Mist%d+$')
+  return string.match(wiki_id, '^%d%d%d$') or string.match(wiki_id, 'Mist%d+$')
+end
+
+local function is_wiki_id (wiki_id)
+  print(wiki_id)
+  return string.match(wiki_id, '^%d%d%da?$') or string.match(wiki_id, 'Mist%d+$')
 end
 
 
@@ -338,15 +343,15 @@ end
 
 local function data_to_list (ship, init_or_lv99)
   local result = ''
-  local item_suffix = is_normal_wiki_id(ship.wiki_id) and '' or '2'
+  local item_suffix = is_no_remodel_wiki_id(ship.wiki_id) and '' or '2'
 
-  if is_normal_wiki_id(ship.wiki_id) then
+  if is_no_remodel_wiki_id(ship.wiki_id) then
     result = result .. '{{舰娘列表\n'
     result = result .. string.format('\t|编号 = %s\n', ship.wiki_id)
   end
   result = result .. string.format('\t|名字%s = %s\n',
                                    item_suffix, ship.zh_name)
-  if is_normal_wiki_id(ship.wiki_id) then
+  if is_no_remodel_wiki_id(ship.wiki_id) then
     result = result .. string.format('\t|级别 = %s\n', ship.class)
     result = result .. string.format('\t|类型 = %s\n', ship.type)
   end
@@ -396,12 +401,14 @@ local function main ()
   local ship = nil
 
   for id in pairs(ship_data_table) do
-    table.insert(wiki_id_list, id)
+    if is_wiki_id(id) then
+      table.insert(wiki_id_list, id)
+    end
   end
 
   table.sort(wiki_id_list)
   for _, wiki_id in ipairs(wiki_id_list) do
-    if not is_normal_wiki_id(wiki_id) then
+    if not is_no_remodel_wiki_id(wiki_id) then
       --
       -- Kcwiki ID such as 001a.
       -- As the last ID is 001, need to delete '}}\n' in the end.
