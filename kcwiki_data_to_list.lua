@@ -48,7 +48,6 @@ local function is_no_remodel_wiki_id (wiki_id)
 end
 
 local function is_wiki_id (wiki_id)
-  print(wiki_id)
   return string.match(wiki_id, '^%d%d%da?$') or string.match(wiki_id, 'Mist%d+$')
 end
 
