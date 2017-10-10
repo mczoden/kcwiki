@@ -42,10 +42,11 @@ end
 
 
 local function is_no_remodel_wiki_id (wiki_id)
-  -- Normal wiki ID: 001, 002, ..., Mist01, Mist02...
+  -- No remodel wiki ID: 001, 002, ..., Mist01, Mist02...
   -- Else: 001a, 002a...
   return string.match(wiki_id, '^%d%d%d$') or string.match(wiki_id, 'Mist%d+$')
 end
+
 
 local function is_wiki_id (wiki_id)
   return string.match(wiki_id, '^%d%d%da?$') or string.match(wiki_id, 'Mist%d+$')
