@@ -150,7 +150,7 @@ local function get_single_number_data (data, restrict)
   local n = tonumber(data)
   if not n then
     return false, tostring(n), string.format('出现非数字：%s\n',
-                                                 tostring(n))
+                                              tostring(data))
   end
 
   if not is_interger_number(n) then
@@ -174,6 +174,10 @@ end
 
 
 local function fillin_init_lv99_data (data, restrict)
+  if type(data) ~= 'table' then
+    return false, {}, '不是一个table类型\n'
+  end
+
   local status1, ret1, msg1 = get_single_number_data(data[INIT], restrict)
   local status99, ret99, msg99 = get_single_number_data(data[LV99], restrict)
 
