@@ -1,6 +1,8 @@
 # kcwiki
 kcwiki scripts
 
+**舰娘列表使用mediawiki的Lua模块生成，源代码由https://github.com/kcwikizh/module-kanmusu-list维护，本repository不再更新**
+
 Generate [舰娘列表] (https://zh.kcwiki.moe/wiki/%E8%88%B0%E5%A8%98%E5%88%97%E8%A1%A8) by [模块:舰娘数据] (https://zh.kcwiki.moe/wiki/%E6%A8%A1%E5%9D%97:%E8%88%B0%E5%A8%98%E6%95%B0%E6%8D%AE)
 
 ## 使用方法
